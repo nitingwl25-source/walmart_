@@ -1,166 +1,44 @@
 # walmart_
 
-drop table if exists walmart_table;
+## Walmart Data Analysis: End-to-End SQL + Python Project
+This project is an end-to-end data analysis solution designed to extract critical business insights from Walmart sales data. We utilize Python for data processing and analysis, SQL for advanced querying, and structured problem-solving techniques to solve key business questions. The project is ideal for data analysts looking to develop skills in data manipulation, SQL querying, and data pipeline creation.
 
-create table walmart_table(
-invoice_id float	,
-Branch	varchar(50),
-City varchar(50),
-category	varchar(100),
-unit_price	float,
-quantity	float,
-date date	,
-time time	,
-payment_method	varchar(50),
-rating float	,
-profit_margin float	,
-total float
+## Download Walmart Sales Data
+#Data Source: Use the Kaggle API to download the Walmart sales datasets from Kaggle.
 
-)
-
-select * from walmart_table;
-
-
---Q.1 Find different payment method and number of transactions, number of qty sold
-select payment_method , count(invoice_id) as no_of_transactions,
-sum(quantity) as total_quatity_sold  from walmart_table
-group by payment_method
-order by 3 desc;
-
-
--- 2  Identify the highest-rated category in each branch, displaying the branch, category AVG RATING
-select * from 
-(select  branch , category , avg(rating) as avg_rating ,
-rank() over (partition by branch order by avg(rating) desc) as rank
-from walmart_table
-group by 1 ,  2)
-where rank =1;
-
-
--- Q.3 Identify the busiest day for each branch based on the number of transactions
-
-select * from (
-select branch , to_char(date , 'Day') as day , count(*) as transactions,
-rank() over(partition by branch order by count(*)  desc) as rank
-from walmart_table
-group by 1,2)
-where rank = 1
-order by transactions desc;
-
--- Q. 4 
--- Calculate the total quantity of items sold per payment method. List payment_method and total_quantity.
-
-
-select payment_method ,count(*) as transactions ,  sum(quantity) as total_quantity from walmart_table
-group by 1
-order by 2 desc;
-
-
--- Q.5
--- Determine the average, minimum, and maximum rating of category for each city. 
--- List the city, average_rating, min_rating, and max_rating.
-
-select category, city ,  min(rating) as min_rating , 
-max(rating) as max_rating ,
-avg(rating) as avg_rating  from walmart_table
-group by category , city ;
-
-
--- Q.6
--- Calculate the total profit for each category by considering total_profit as
--- (unit_price * quantity * profit_margin). 
--- List category and total_profit, ordered from highest to lowest profit.
-
-
-select * from walmart_table;
-
-select category , 
-round(sum(unit_price * quantity * profit_margin)::numeric,2) as total_profit 
-from walmart_table
-group by 1
-order by 2 desc;
-
-
--- Q.7
--- Determine the most common payment method for each Branch. 
--- Display Branch and the preferred_payment_method.
-
-select * from (
-select  branch , payment_method  , count(*) as total_transations,
-rank() over(partition by branch order by count(payment_method) desc) as rank from walmart_table
-group by 1 , 2
-order by 3 desc)
-where rank = 1
-
-
-
-
-
-
-WITH cte 
-AS
-(SELECT 
-	branch,
-	payment_method,
-	COUNT(*) as total_trans,
-	RANK() OVER(PARTITION BY branch ORDER BY COUNT(*) DESC) as rank
-FROM walmart_table
-GROUP BY 1, 2
-)
-SELECT *
-FROM cte
-WHERE rank = 1
-
-
--- Q.8
--- Categorize sales into 3 group MORNING, AFTERNOON, EVENING 
--- Find out each of the shift and number of invoices
-
-select  
-CASE 
-	WHEN extract(hour from time) <12 then 'Morning'
-	when extract(hour from time) between 12 and 17 then 'Afternoon'
-	else 'Evening'
-	end as day_slot , 
-	count(*) as invoices 
-	from walmart_table
-	group by 1;
-
-
--- #9 Identify 5 branch with highest decrease ratio in 
--- revevenue compare to last year(current year 2023 and last year 2022)
-
--- rdr == last_rev-cr_rev/ls_rev*100
-
-
-select branch , extract(year from date) as year from walmart_table;
-
-with revenue_2022 as 
-(
-select branch , sum(total) as total_revenue from walmart_table
-where extract(year from date) = 2022
-group by 1)  ,
-
-revenue_2023 as 
-(
-select branch , sum(total) as total_revenue from walmart_table
-where extract(year from date) = 2023
-group by 1) 
-
-
-select ly.branch , ly.total_revenue as revenue_2022, cy.total_revenue as revenue_2023 , 
-round(((ly.total_revenue - cy.total_revenue)::numeric /ly.total_revenue :: numeric) *100,2)  as rev_dec_ratio  
-from revenue_2022 as ly
-join
-revenue_2023 as cy
-on ly.branch = cy.branch
-
-where ly.total_revenue > cy.total_revenue
-order by  rev_dec_ratio desc
-limit 5;
-
-
-
-
-
-
+Storage: Save the data in the data/ folder for easy reference and access.
+##  Install Required Libraries and Load Data
+Libraries: Install necessary Python libraries using:
+pip install pandas numpy sqlalchemy mysql-connector-python psycopg2
+Loading Data: Read the data into a Pandas DataFrame for initial analysis and transformations.
+##  Explore the Data
+Goal: Conduct an initial data exploration to understand data distribution, check column names, types, and identify potential issues.
+Analysis: Use functions like .info(), .describe(), and .head() to get a quick overview of the data structure and statistics.
+## Data Cleaning
+Remove Duplicates: Identify and remove duplicate entries to avoid skewed results.
+Handle Missing Values: Drop rows or columns with missing values if they are insignificant; fill values where essential.
+Fix Data Types: Ensure all columns have consistent data types (e.g., dates as datetime, prices as float).
+Currency Formatting: Use .replace() to handle and format currency values for analysis.
+Validation: Check for any remaining inconsistencies and verify the cleaned data.
+##  Feature Engineering
+Create New Columns: Calculate the Total Amount for each transaction by multiplying unit_price by quantity and adding this as a new column.
+Enhance Dataset: Adding this calculated field will streamline further SQL analysis and aggregation tasks.
+##  Load Data into MySQL and PostgreSQL
+Set Up Connections: Connect to MySQL and PostgreSQL using sqlalchemy and load the cleaned data into each database.
+Table Creation: Set up tables in both MySQL and PostgreSQL using Python SQLAlchemy to automate table creation and data insertion.
+Verification: Run initial SQL queries to confirm that the data has been loaded accurately.
+##  SQL Analysis: Complex Queries and Business Problem Solving
+Business Problem-Solving: Write and execute complex SQL queries to answer critical business questions, such as:
+Revenue trends across branches and categories.
+Identifying best-selling product categories.
+Sales performance by time, city, and payment method.
+Analyzing peak sales periods and customer buying patterns.
+Profit margin analysis by branch and category.
+Documentation: Keep clear notes of each query's objective, approach, and results.
+## . Project Publishing and Documentation
+Documentation: Maintain well-structured documentation of the entire process in Markdown or a Jupyter Notebook.
+Project Publishing: Publish the completed project on GitHub or any other version control platform, including:
+The README.md file (this document).
+Jupyter Notebooks (if applicable).
+SQL query scripts.
+Data files (if possible) or steps to access them.
